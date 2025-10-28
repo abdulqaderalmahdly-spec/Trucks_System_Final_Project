@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة الشحنات - نظام إدارة القواطر</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-page="shipments">
+    <nav class="navbar">
+        <h1>🚚 نظام إدارة القواطر المتكامل</h1>
+        <div>
+            <a href="/">الرئيسية</a>
+            <a href="/dashboard">لوحة التحكم</a>
+            <a href="/trucks">القواطر</a>
+            <a href="/drivers">السائقين</a>
+            <a href="/shipments">الشحنات</a>
+            <a href="/expenses">المصاريف</a>
+            <a href="/reports">التقارير</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2>إدارة الشحنات</h2>
+            <button onclick="openModal('shipmentModal')" class="btn btn-primary">+ إضافة شحنة جديدة</button>
+        </div>
+
+        <div class="card">
+            <table class="table" id="shipmentsTable">
+                <thead>
+                    <tr>
+                        <th>من</th>
+                        <th>إلى</th>
+                        <th>الحمولة</th>
+                        <th>الإيرادات</th>
+                        <th>الحالة</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="6" class="loading">جاري التحميل...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal for Adding Shipment -->
+    <div id="shipmentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>إضافة شحنة جديدة</h2>
+                <button class="close-btn" onclick="closeModal('shipmentModal')">×</button>
+            </div>
+            <form id="shipmentForm" onsubmit="createShipment(); return false;">
+                <div class="form-group">
+                    <label>معرف القاطرة</label>
+                    <input type="number" name="truck_id" required>
+                </div>
+                <div class="form-group">
+                    <label>معرف السائق</label>
+                    <input type="number" name="driver_id" required>
+                </div>
+                <div class="form-group">
+                    <label>مكان البداية</label>
+                    <input type="text" name="from_location" required>
+                </div>
+                <div class="form-group">
+                    <label>مكان النهاية</label>
+                    <input type="text" name="to_location" required>
+                </div>
+                <div class="form-group">
+                    <label>وصف الحمولة</label>
+                    <textarea name="cargo" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>الإيرادات</label>
+                    <input type="number" name="revenue" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>الحالة</label>
+                    <select name="status" required>
+                        <option value="pending">قيد الانتظار</option>
+                        <option value="in_transit">قيد النقل</option>
+                        <option value="delivered">تم التسليم</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">إضافة</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

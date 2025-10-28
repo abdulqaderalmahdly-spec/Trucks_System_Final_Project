@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المستخدمين - نظام إدارة القواطر</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .user-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .user-info .username {
+            font-weight: 600;
+            color: #1e40af;
+            font-size: 16px;
+        }
+
+        .user-info .email {
+            color: #666;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .user-role {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .role-admin {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .role-manager {
+            background-color: #dbeafe;
+            color: #0c4a6e;
+        }
+
+        .role-user {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .user-status {
+            text-align: center;
+        }
+
+        .status-active {
+            color: #16a34a;
+            font-weight: 600;
+        }
+
+        .status-inactive {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-delete {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-toggle {
+            background-color: #f59e0b;
+            color: white;
+        }
+
+        .btn-toggle:hover {
+            background-color: #d97706;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #1e40af;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: #1e40af;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+        }
+
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+
+        @media (max-width: 768px) {
+            .user-card {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>🚚 نظام إدارة القواطر</h1>
+        <div>
+            <a href="/dashboard">لوحة التحكم</a>
+            <a href="/trucks">القواطر</a>
+            <a href="/drivers">السائقين</a>
+            <a href="/shipments">الشحنات</a>
+            <a href="/users">المستخدمين</a>
+            <a href="#" onclick="logout()">تسجيل الخروج</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>إدارة المستخدمين</h2>
+                <button class="btn btn-primary" onclick="openAddUserModal()">إضافة مستخدم جديد</button>
+            </div>
+
+            <div id="usersContainer" style="margin-top: 20px;">
+                <!-- سيتم ملء المستخدمين هنا -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal لإضافة/تعديل مستخدم -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">إضافة مستخدم جديد</h2>
+                <button class="close-btn" onclick="closeUserModal()">&times;</button>
+            </div>
+
+            <form id="userForm">
+                <div class="form-group">
+                    <label for="username">اسم المستخدم</label>
+                    <input type="text" id="username" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">البريد الإلكتروني</label>
+                    <input type="email" id="email" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="fullName">الاسم الكامل</label>
+                    <input type="text" id="fullName">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">كلمة المرور</label>
+                    <input type="password" id="password" placeholder="اتركها فارغة للاحتفاظ بالكلمة الحالية">
+                </div>
+
+                <div class="form-group">
+                    <label for="role">الدور</label>
+                    <select id="role">
+                        <option value="user">مستخدم عادي</option>
+                        <option value="manager">مدير</option>
+                        <option value="admin">مسؤول</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="isActive">
+                        <input type="checkbox" id="isActive" checked>
+                        تفعيل الحساب
+                    </label>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeUserModal()">إلغاء</button>
+                    <button type="submit" class="btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        let editingUserId = null;
+
+        // تحميل المستخدمين عند فتح الصفحة
+        document.addEventListener('DOMContentLoaded', loadUsers);
+
+        async function loadUsers() {
+            try {
+                const response = await fetch('/auth/users');
+                if (!response.ok) throw new Error('Failed to load users');
+                
+                const users = await response.json();
+                displayUsers(users);
+            } catch (error) {
+                console.error('Error loading users:', error);
+                showAlert('فشل تحميل المستخدمين', 'error');
+            }
+        }
+
+        function displayUsers(users) {
+            const container = document.getElementById('usersContainer');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">لا توجد مستخدمين</p>';
+                return;
+            }
+
+            container.innerHTML = users.map(user => `
+                <div class="user-card">
+                    <div class="user-info">
+                        <span class="username">${user.username}</span>
+                        <span class="email">${user.email}</span>
+                    </div>
+                    <div>${user.full_name || '-'}</div>
+                    <div><span class="user-role role-${user.role}">${getRoleLabel(user.role)}</span></div>
+                    <div class="user-status">
+                        <span class="status-${user.is_active ? 'active' : 'inactive'}">
+                            ${user.is_active ? 'مفعل' : 'معطل'}
+                        </span>
+                    </div>
+                    <div class="user-actions">
+                        <button class="btn-small btn-edit" onclick="editUser(${user.id})">تعديل</button>
+                        <button class="btn-small btn-toggle" onclick="toggleUserStatus(${user.id})">
+                            ${user.is_active ? 'تعطيل' : 'تفعيل'}
+                        </button>
+                        <button class="btn-small btn-delete" onclick="deleteUser(${user.id})">حذف</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getRoleLabel(role) {
+            const labels = {
+                'admin': 'مسؤول',
+                'manager': 'مدير',
+                'user': 'مستخدم'
+            };
+            return labels[role] || role;
+        }
+
+        function openAddUserModal() {
+            editingUserId = null;
+            document.getElementById('modalTitle').textContent = 'إضافة مستخدم جديد';
+            document.getElementById('userForm').reset();
+            document.getElementById('username').disabled = false;
+            document.getElementById('password').required = true;
+            document.getElementById('userModal').classList.add('show');
+        }
+
+        async function editUser(userId) {
+            try {
+                const response = await fetch(`/auth/users/${userId}`);
+                if (!response.ok) throw new Error('Failed to load user');
+                
+                const user = await response.json();
+                editingUserId = userId;
+                
+                document.getElementById('modalTitle').textContent = 'تعديل المستخدم';
+                document.getElementById('username').value = user.username;
+                document.getElementById('username').disabled = true;
+                document.getElementById('email').value = user.email;
+                document.getElementById('fullName').value = user.full_name || '';
+                document.getElementById('role').value = user.role;
+                document.getElementById('isActive').checked = user.is_active;
+                document.getElementById('password').required = false;
+                document.getElementById('password').value = '';
+                
+                document.getElementById('userModal').classList.add('show');
+            } catch (error) {
+                console.error('Error loading user:', error);
+                showAlert('فشل تحميل بيانات المستخدم', 'error');
+            }
+        }
+
+        function closeUserModal() {
+            document.getElementById('userModal').classList.remove('show');
+            editingUserId = null;
+        }
+
+        document.getElementById('userForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                email: document.getElementById('email').value,
+                full_name: document.getElementById('fullName').value,
+                role: document.getElementById('role').value,
+                is_active: document.getElementById('isActive').checked
+            };
+
+            const password = document.getElementById('password').value;
+            if (password) {
+                formData.password = password;
+            }
+
+            try {
+                if (editingUserId) {
+                    // تحديث مستخدم موجود
+                    const response = await fetch(`/auth/users/${editingUserId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (!response.ok) throw new Error('Failed to update user');
+                    showAlert('تم تحديث المستخدم بنجاح', 'success');
+                } else {
+                    // إضافة مستخدم جديد
+                    formData.username = document.getElementById('username').value;
+                    formData.password = document.getElementById('password').value;
+
+                    const response = await fetch('/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to create user');
+                    }
+                    showAlert('تم إنشاء المستخدم بنجاح', 'success');
+                }
+
+                closeUserModal();
+                loadUsers();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert(error.message, 'error');
+            }
+        });
+
+        async function toggleUserStatus(userId) {
+            if (!confirm('هل أنت متأكد؟')) return;
+
+            try {
+                const response = await fetch(`/auth/users/${userId}/toggle-status`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) throw new Error('Failed to toggle status');
+                
+                const result = await response.json();
+                showAlert(result.message, 'success');
+                loadUsers();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('فشل تحديث حالة المستخدم', 'error');
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('هل أنت متأكد من حذف هذا المستخدم؟')) return;
+
+            try {
+                const response = await fetch(`/auth/users/${userId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete user');
+                
+                showAlert('تم حذف المستخدم بنجاح', 'success');
+                loadUsers();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('فشل حذف المستخدم', 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

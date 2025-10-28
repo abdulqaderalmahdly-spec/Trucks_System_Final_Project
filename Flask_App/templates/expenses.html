@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة المصاريف - نظام إدارة القواطر</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .expense-filters {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .filter-group input,
+        .filter-group select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .expense-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .expense-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .expense-type {
+            font-weight: 600;
+            color: #1e40af;
+            font-size: 16px;
+        }
+
+        .expense-date {
+            color: #666;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .expense-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: #dc2626;
+        }
+
+        .expense-truck {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .expense-driver {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .expense-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-delete {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+
+        .expense-type-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .type-salary {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+
+        .type-fuel {
+            background-color: #dbeafe;
+            color: #0c4a6e;
+        }
+
+        .type-maintenance {
+            background-color: #dcfce7;
+            color: #166534;
+        }
+
+        .type-other {
+            background-color: #f3e8ff;
+            color: #6b21a8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #1e40af;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: #1e40af;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+        }
+
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin: 0 0 10px 0;
+        }
+
+        .summary-card .amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e40af;
+        }
+
+        @media (max-width: 768px) {
+            .expense-card {
+                grid-template-columns: 1fr;
+            }
+            
+            .expense-filters {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>🚚 نظام إدارة القواطر</h1>
+        <div>
+            <a href="/dashboard">لوحة التحكم</a>
+            <a href="/trucks">القواطر</a>
+            <a href="/drivers">السائقين</a>
+            <a href="/shipments">الشحنات</a>
+            <a href="/expenses">المصاريف</a>
+            <a href="/users">المستخدمين</a>
+            <a href="#" onclick="logout()">تسجيل الخروج</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>إدارة المصاريف</h2>
+                <button class="btn btn-primary" onclick="openAddExpenseModal()">إضافة مصروف جديد</button>
+            </div>
+
+            <!-- ملخص المصاريف -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>إجمالي الرواتب</h3>
+                    <div class="amount" id="totalSalaries">0 ر.س</div>
+                </div>
+                <div class="summary-card">
+                    <h3>إجمالي مصاريف الوقود</h3>
+                    <div class="amount" id="totalFuel">0 ر.س</div>
+                </div>
+                <div class="summary-card">
+                    <h3>إجمالي مصاريف الصيانة</h3>
+                    <div class="amount" id="totalMaintenance">0 ر.س</div>
+                </div>
+                <div class="summary-card">
+                    <h3>إجمالي المصاريف</h3>
+                    <div class="amount" id="totalExpenses">0 ر.س</div>
+                </div>
+            </div>
+
+            <!-- فلاتر البحث -->
+            <div class="expense-filters">
+                <div class="filter-group">
+                    <label>نوع المصروف</label>
+                    <select id="filterType" onchange="filterExpenses()">
+                        <option value="">الكل</option>
+                        <option value="salary">الراتب</option>
+                        <option value="fuel">الوقود</option>
+                        <option value="maintenance">الصيانة</option>
+                        <option value="other">أخرى</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>القاطرة</label>
+                    <select id="filterTruck" onchange="filterExpenses()">
+                        <option value="">الكل</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>السائق</label>
+                    <select id="filterDriver" onchange="filterExpenses()">
+                        <option value="">الكل</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>من التاريخ</label>
+                    <input type="date" id="filterStartDate" onchange="filterExpenses()">
+                </div>
+                <div class="filter-group">
+                    <label>إلى التاريخ</label>
+                    <input type="date" id="filterEndDate" onchange="filterExpenses()">
+                </div>
+            </div>
+
+            <!-- قائمة المصاريف -->
+            <div id="expensesContainer" style="margin-top: 20px;">
+                <!-- سيتم ملء المصاريف هنا -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal لإضافة/تعديل مصروف -->
+    <div id="expenseModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">إضافة مصروف جديد</h2>
+                <button class="close-btn" onclick="closeExpenseModal()">&times;</button>
+            </div>
+
+            <form id="expenseForm">
+                <div class="form-group">
+                    <label for="expenseType">نوع المصروف</label>
+                    <select id="expenseType" required>
+                        <option value="">اختر نوع المصروف</option>
+                        <option value="salary">راتب</option>
+                        <option value="fuel">وقود</option>
+                        <option value="maintenance">صيانة</option>
+                        <option value="fine">غرامة</option>
+                        <option value="other">أخرى</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="expenseTruck">القاطرة</label>
+                    <select id="expenseTruck" required>
+                        <option value="">اختر القاطرة</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="expenseDriver">السائق (اختياري)</label>
+                    <select id="expenseDriver">
+                        <option value="">لا يوجد</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="expenseAmount">المبلغ (ر.س)</label>
+                    <input type="number" id="expenseAmount" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="expenseDate">التاريخ</label>
+                    <input type="date" id="expenseDate" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="expenseDescription">الملاحظات</label>
+                    <textarea id="expenseDescription" rows="3" placeholder="أضف ملاحظات عن المصروف..."></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeExpenseModal()">إلغاء</button>
+                    <button type="submit" class="btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        let allExpenses = [];
+        let editingExpenseId = null;
+
+        // تحميل البيانات عند فتح الصفحة
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadExpenses();
+            await loadTrucks();
+            await loadDrivers();
+            setDefaultDate();
+        });
+
+        function setDefaultDate() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('expenseDate').value = today;
+        }
+
+        async function loadExpenses() {
+            try {
+                const response = await fetch('/api/expenses');
+                if (!response.ok) throw new Error('Failed to load expenses');
+                
+                allExpenses = await response.json();
+                displayExpenses(allExpenses);
+                updateSummary();
+            } catch (error) {
+                console.error('Error loading expenses:', error);
+                showAlert('فشل تحميل المصاريف', 'error');
+            }
+        }
+
+        async function loadTrucks() {
+            try {
+                const response = await fetch('/api/trucks');
+                if (!response.ok) throw new Error('Failed to load trucks');
+                
+                const trucks = await response.json();
+                const select = document.getElementById('expenseTruck');
+                const filterSelect = document.getElementById('filterTruck');
+                
+                trucks.forEach(truck => {
+                    const option = document.createElement('option');
+                    option.value = truck.id;
+                    option.textContent = `${truck.truck_type} - ${truck.plate_number}`;
+                    select.appendChild(option);
+                    
+                    const filterOption = document.createElement('option');
+                    filterOption.value = truck.id;
+                    filterOption.textContent = `${truck.truck_type} - ${truck.plate_number}`;
+                    filterSelect.appendChild(filterOption);
+                });
+            } catch (error) {
+                console.error('Error loading trucks:', error);
+            }
+        }
+
+        async function loadDrivers() {
+            try {
+                const response = await fetch('/api/drivers');
+                if (!response.ok) throw new Error('Failed to load drivers');
+                
+                const drivers = await response.json();
+                const select = document.getElementById('expenseDriver');
+                const filterSelect = document.getElementById('filterDriver');
+                
+                drivers.forEach(driver => {
+                    const option = document.createElement('option');
+                    option.value = driver.id;
+                    option.textContent = driver.name;
+                    select.appendChild(option);
+                    
+                    const filterOption = document.createElement('option');
+                    filterOption.value = driver.id;
+                    filterOption.textContent = driver.name;
+                    filterSelect.appendChild(filterOption);
+                });
+            } catch (error) {
+                console.error('Error loading drivers:', error);
+            }
+        }
+
+        function displayExpenses(expenses) {
+            const container = document.getElementById('expensesContainer');
+            
+            if (expenses.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">لا توجد مصاريف</p>';
+                return;
+            }
+
+            container.innerHTML = expenses.map(expense => {
+                const date = new Date(expense.expense_date).toLocaleDateString('ar-SA');
+                const typeLabel = getExpenseTypeLabel(expense.expense_type);
+                const typeBadgeClass = `type-${expense.expense_type}`;
+                
+                return `
+                    <div class="expense-card">
+                        <div class="expense-info">
+                            <span class="expense-type">${typeLabel}</span>
+                            <span class="expense-date">${date}</span>
+                        </div>
+                        <div>
+                            <span class="expense-type-badge ${typeBadgeClass}">${typeLabel}</span>
+                            <div style="color: #666; font-size: 13px; margin-top: 5px;">${expense.description || '-'}</div>
+                        </div>
+                        <div class="expense-truck">${expense.truck_id ? 'قاطرة #' + expense.truck_id : '-'}</div>
+                        <div class="expense-driver">${expense.driver_id ? 'سائق #' + expense.driver_id : '-'}</div>
+                        <div class="expense-amount">${expense.amount.toFixed(2)} ر.س</div>
+                        <div class="expense-actions">
+                            <button class="btn-small btn-edit" onclick="editExpense(${expense.id})">تعديل</button>
+                            <button class="btn-small btn-delete" onclick="deleteExpense(${expense.id})">حذف</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getExpenseTypeLabel(type) {
+            const labels = {
+                'salary': 'راتب',
+                'fuel': 'وقود',
+                'maintenance': 'صيانة',
+                'fine': 'غرامة',
+                'other': 'أخرى'
+            };
+            return labels[type] || type;
+        }
+
+        function updateSummary() {
+            const salaries = allExpenses.filter(e => e.expense_type === 'salary').reduce((sum, e) => sum + e.amount, 0);
+            const fuel = allExpenses.filter(e => e.expense_type === 'fuel').reduce((sum, e) => sum + e.amount, 0);
+            const maintenance = allExpenses.filter(e => e.expense_type === 'maintenance').reduce((sum, e) => sum + e.amount, 0);
+            const total = allExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+            document.getElementById('totalSalaries').textContent = salaries.toFixed(2) + ' ر.س';
+            document.getElementById('totalFuel').textContent = fuel.toFixed(2) + ' ر.س';
+            document.getElementById('totalMaintenance').textContent = maintenance.toFixed(2) + ' ر.س';
+            document.getElementById('totalExpenses').textContent = total.toFixed(2) + ' ر.س';
+        }
+
+        function filterExpenses() {
+            const type = document.getElementById('filterType').value;
+            const truck = document.getElementById('filterTruck').value;
+            const driver = document.getElementById('filterDriver').value;
+            const startDate = document.getElementById('filterStartDate').value;
+            const endDate = document.getElementById('filterEndDate').value;
+
+            let filtered = allExpenses;
+
+            if (type) {
+                filtered = filtered.filter(e => e.expense_type === type);
+            }
+            if (truck) {
+                filtered = filtered.filter(e => e.truck_id == truck);
+            }
+            if (driver) {
+                filtered = filtered.filter(e => e.driver_id == driver);
+            }
+            if (startDate) {
+                filtered = filtered.filter(e => new Date(e.expense_date) >= new Date(startDate));
+            }
+            if (endDate) {
+                filtered = filtered.filter(e => new Date(e.expense_date) <= new Date(endDate));
+            }
+
+            displayExpenses(filtered);
+        }
+
+        function openAddExpenseModal() {
+            editingExpenseId = null;
+            document.getElementById('modalTitle').textContent = 'إضافة مصروف جديد';
+            document.getElementById('expenseForm').reset();
+            setDefaultDate();
+            document.getElementById('expenseModal').classList.add('show');
+        }
+
+        function closeExpenseModal() {
+            document.getElementById('expenseModal').classList.remove('show');
+            editingExpenseId = null;
+        }
+
+        async function editExpense(expenseId) {
+            const expense = allExpenses.find(e => e.id === expenseId);
+            if (!expense) return;
+
+            editingExpenseId = expenseId;
+            document.getElementById('modalTitle').textContent = 'تعديل المصروف';
+            document.getElementById('expenseType').value = expense.expense_type;
+            document.getElementById('expenseTruck').value = expense.truck_id || '';
+            document.getElementById('expenseDriver').value = expense.driver_id || '';
+            document.getElementById('expenseAmount').value = expense.amount;
+            document.getElementById('expenseDate').value = expense.expense_date.split('T')[0];
+            document.getElementById('expenseDescription').value = expense.description || '';
+
+            document.getElementById('expenseModal').classList.add('show');
+        }
+
+        document.getElementById('expenseForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                truck_id: parseInt(document.getElementById('expenseTruck').value),
+                driver_id: document.getElementById('expenseDriver').value ? parseInt(document.getElementById('expenseDriver').value) : null,
+                expense_type: document.getElementById('expenseType').value,
+                amount: parseFloat(document.getElementById('expenseAmount').value),
+                expense_date: document.getElementById('expenseDate').value,
+                description: document.getElementById('expenseDescription').value
+            };
+
+            try {
+                if (editingExpenseId) {
+                    // تحديث مصروف موجود
+                    const response = await fetch(`/api/expenses/${editingExpenseId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (!response.ok) throw new Error('Failed to update expense');
+                    showAlert('تم تحديث المصروف بنجاح', 'success');
+                } else {
+                    // إضافة مصروف جديد
+                    const response = await fetch('/api/expenses', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (!response.ok) throw new Error('Failed to create expense');
+                    showAlert('تم إضافة المصروف بنجاح', 'success');
+                }
+
+                closeExpenseModal();
+                await loadExpenses();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('حدث خطأ أثناء حفظ المصروف', 'error');
+            }
+        });
+
+        async function deleteExpense(expenseId) {
+            if (!confirm('هل أنت متأكد من حذف هذا المصروف؟')) return;
+
+            try {
+                const response = await fetch(`/api/expenses/${expenseId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete expense');
+                
+                showAlert('تم حذف المصروف بنجاح', 'success');
+                await loadExpenses();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('فشل حذف المصروف', 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

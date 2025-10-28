@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة القواطر - نظام إدارة القواطر</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-page="trucks">
+    <nav class="navbar">
+        <h1>🚚 نظام إدارة القواطر المتكامل</h1>
+        <div>
+            <a href="/">الرئيسية</a>
+            <a href="/dashboard">لوحة التحكم</a>
+            <a href="/trucks">القواطر</a>
+            <a href="/drivers">السائقين</a>
+            <a href="/shipments">الشحنات</a>
+            <a href="/expenses">المصاريف</a>
+            <a href="/reports">التقارير</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2>إدارة القواطر</h2>
+            <button onclick="openModal('truckModal')" class="btn btn-primary">+ إضافة قاطرة جديدة</button>
+        </div>
+
+        <div class="card">
+            <table class="table" id="trucksTable">
+                <thead>
+                    <tr>
+                        <th>رقم اللوحة</th>
+                        <th>نوع القاطرة</th>
+                        <th>الحالة</th>
+                        <th>آخر صيانة</th>
+                        <th>عدد الشحنات</th>
+                        <th>الإجراءات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td colspan="6" class="loading">جاري التحميل...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal for Adding Truck -->
+    <div id="truckModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>إضافة قاطرة جديدة</h2>
+                <button class="close-btn" onclick="closeModal('truckModal')">×</button>
+            </div>
+            <form id="truckForm" onsubmit="createTruck(); return false;">
+                <div class="form-group">
+                    <label>نوع القاطرة</label>
+                    <input type="text" name="truck_type" required>
+                </div>
+                <div class="form-group">
+                    <label>رقم اللوحة</label>
+                    <input type="text" name="plate_number" required>
+                </div>
+                <div class="form-group">
+                    <label>الحالة</label>
+                    <select name="status" required>
+                        <option value="active">نشطة</option>
+                        <option value="maintenance">صيانة</option>
+                        <option value="stopped">متوقفة</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-success">إضافة</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

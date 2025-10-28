@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>التقارير - نظام إدارة القواطر</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <h1>🚚 نظام إدارة القواطر المتكامل</h1>
+        <div>
+            <a href="/">الرئيسية</a>
+            <a href="/dashboard">لوحة التحكم</a>
+            <a href="/trucks">القواطر</a>
+            <a href="/drivers">السائقين</a>
+            <a href="/shipments">الشحنات</a>
+            <a href="/reports">التقارير</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2>التقارير والتحليلات</h2>
+            <p>اختر نوع التقرير الذي تريده وحدد الفترة الزمنية</p>
+        </div>
+
+        <div class="card">
+            <h3>إنشاء تقرير جديد</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>نوع التقرير</label>
+                    <select id="reportType">
+                        <option value="fleet_summary">ملخص الأسطول</option>
+                        <option value="truck_profit">ربح/خسارة القاطرة</option>
+                        <option value="expense_analysis">تحليل المصاريف</option>
+                        <option value="driver_performance">أداء السائقين</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>من التاريخ</label>
+                    <input type="date" id="startDate">
+                </div>
+                <div class="form-group">
+                    <label>إلى التاريخ</label>
+                    <input type="date" id="endDate">
+                </div>
+            </div>
+            <button onclick="generateReport()" class="btn btn-primary">إنشاء التقرير</button>
+            <button onclick="printReport()" class="btn btn-success">طباعة</button>
+        </div>
+
+        <div class="card" id="reportResult" style="display: none;">
+            <h3>نتائج التقرير</h3>
+            <div id="reportContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Set default dates
+        const today = new Date();
+        const thirtyDaysAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+        
+        document.getElementById('startDate').valueAsDate = thirtyDaysAgo;
+        document.getElementById('endDate').valueAsDate = today;
+
+        async function generateReport() {
+            const reportType = document.getElementById('reportType').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            try {
+                if (reportType === 'fleet_summary') {
+                    const response = await fetch(`/api/analytics/fleet-summary?start_date=${startDate}&end_date=${endDate}`);
+                    const data = await response.json();
+                    
+                    let html = `
+                        <h4>ملخص الأسطول</h4>
+                        <p>الفترة: ${startDate} إلى ${endDate}</p>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>رقم اللوحة</th>
+                                    <th>الإيرادات</th>
+                                    <th>المصاريف</th>
+                                    <th>الربح</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    
+                    data.trucks.forEach(truck => {
+                        html += `
+                            <tr>
+                                <td>${truck.truck.plate_number}</td>
+                                <td>${truck.revenue.toFixed(2)} ر.س</td>
+                                <td>${truck.expenses.toFixed(2)} ر.س</td>
+                                <td>${truck.profit.toFixed(2)} ر.س</td>
+                            </tr>
+                        `;
+                    });
+                    
+                    html += `
+                            </tbody>
+                        </table>
+                        <h4>الملخص الإجمالي</h4>
+                        <p>إجمالي الإيرادات: ${data.total_revenue.toFixed(2)} ر.س</p>
+                        <p>إجمالي المصاريف: ${data.total_expenses.toFixed(2)} ر.س</p>
+                        <p><strong>الربح الإجمالي: ${data.total_profit.toFixed(2)} ر.س</strong></p>
+                    `;
+                    
+                    document.getElementById('reportContent').innerHTML = html;
+                    document.getElementById('reportResult').style.display = 'block';
+                }
+            } catch (error) {
+                alert('حدث خطأ في إنشاء التقرير');
+                console.error(error);
+            }
+        }
+
+        function printReport() {
+            window.print();
+        }
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

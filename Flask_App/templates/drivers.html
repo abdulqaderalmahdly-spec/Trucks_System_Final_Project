@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة السائقين - نظام إدارة القواطر</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .driver-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .driver-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .driver-name {
+            font-weight: 600;
+            color: #1e40af;
+            font-size: 16px;
+        }
+
+        .driver-phone {
+            color: #666;
+            font-size: 13px;
+            margin-top: 3px;
+        }
+
+        .driver-salary {
+            font-size: 16px;
+            font-weight: 600;
+            color: #059669;
+        }
+
+        .driver-truck {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .driver-status {
+            text-align: center;
+        }
+
+        .status-active {
+            color: #16a34a;
+            font-weight: 600;
+        }
+
+        .status-inactive {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .driver-balance {
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .balance-credit {
+            color: #16a34a;
+        }
+
+        .balance-debit {
+            color: #dc2626;
+        }
+
+        .balance-neutral {
+            color: #666;
+        }
+
+        .driver-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-edit {
+            background-color: #3b82f6;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #2563eb;
+        }
+
+        .btn-account {
+            background-color: #8b5cf6;
+            color: white;
+        }
+
+        .btn-account:hover {
+            background-color: #7c3aed;
+        }
+
+        .btn-delete {
+            background-color: #ef4444;
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.4);
+        }
+
+        .modal.show {
+            display: block;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-header h2 {
+            margin: 0;
+            color: #1e40af;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1e40af;
+            box-shadow: 0 0 0 3px rgba(30, 64, 175, 0.1);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .btn-primary {
+            background-color: #1e40af;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+        }
+
+        .btn-secondary {
+            background-color: #e5e7eb;
+            color: #333;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background-color: #d1d5db;
+        }
+
+        .account-detail {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #1e40af;
+        }
+
+        .account-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .account-detail-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .account-detail-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .account-detail-value {
+            font-weight: 600;
+            color: #1e40af;
+        }
+
+        .account-balance {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 20px;
+            border: 2px solid #1e40af;
+        }
+
+        .account-balance-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .account-balance-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .account-balance-status {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .shipments-list,
+        .expenses-list {
+            margin-top: 20px;
+        }
+
+        .shipments-list h4,
+        .expenses-list h4 {
+            color: #1e40af;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .shipment-item,
+        .expense-item {
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .shipment-item {
+            border-left: 3px solid #059669;
+        }
+
+        .expense-item {
+            border-left: 3px solid #dc2626;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .summary-card h3 {
+            color: #666;
+            font-size: 14px;
+            margin: 0 0 10px 0;
+        }
+
+        .summary-card .amount {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1e40af;
+        }
+
+        @media (max-width: 1024px) {
+            .driver-card {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .driver-card {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>🚚 نظام إدارة القواطر</h1>
+        <div>
+            <a href="/dashboard">لوحة التحكم</a>
+            <a href="/trucks">القواطر</a>
+            <a href="/drivers">السائقين</a>
+            <a href="/shipments">الشحنات</a>
+            <a href="/expenses">المصاريف</a>
+            <a href="/users">المستخدمين</a>
+            <a href="#" onclick="logout()">تسجيل الخروج</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2>إدارة السائقين</h2>
+                <button class="btn btn-primary" onclick="openAddDriverModal()">إضافة سائق جديد</button>
+            </div>
+
+            <!-- ملخص السائقين -->
+            <div class="summary-cards">
+                <div class="summary-card">
+                    <h3>إجمالي السائقين</h3>
+                    <div class="amount" id="totalDrivers">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>السائقين النشطين</h3>
+                    <div class="amount" id="activeDrivers">0</div>
+                </div>
+                <div class="summary-card">
+                    <h3>إجمالي الرواتب</h3>
+                    <div class="amount" id="totalSalaries">0 ر.س</div>
+                </div>
+                <div class="summary-card">
+                    <h3>الرصيد الكلي</h3>
+                    <div class="amount" id="totalBalance">0 ر.س</div>
+                </div>
+            </div>
+
+            <!-- قائمة السائقين -->
+            <div id="driversContainer" style="margin-top: 20px;">
+                <!-- سيتم ملء السائقين هنا -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal لإضافة/تعديل سائق -->
+    <div id="driverModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">إضافة سائق جديد</h2>
+                <button class="close-btn" onclick="closeDriverModal()">&times;</button>
+            </div>
+
+            <form id="driverForm">
+                <div class="form-group">
+                    <label for="driverName">الاسم الكامل</label>
+                    <input type="text" id="driverName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="driverPhone">رقم الجوال</label>
+                    <input type="tel" id="driverPhone" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="driverSalary">الراتب الشهري (ر.س)</label>
+                    <input type="number" id="driverSalary" step="0.01" min="0" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="driverTruck">القاطرة</label>
+                    <select id="driverTruck">
+                        <option value="">لا توجد قاطرة</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="driverStatus">الحالة</label>
+                    <select id="driverStatus">
+                        <option value="active">نشط</option>
+                        <option value="inactive">غير نشط</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary" onclick="closeDriverModal()">إلغاء</button>
+                    <button type="submit" class="btn-primary">حفظ</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal لعرض كشف حساب السائق -->
+    <div id="accountModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>كشف حساب السائق</h2>
+                <button class="close-btn" onclick="closeAccountModal()">&times;</button>
+            </div>
+
+            <div id="accountContent">
+                <!-- سيتم ملء محتوى الحساب هنا -->
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary" onclick="closeAccountModal()">إغلاق</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        let allDrivers = [];
+        let editingDriverId = null;
+
+        // تحميل البيانات عند فتح الصفحة
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadDrivers();
+            await loadTrucks();
+        });
+
+        async function loadDrivers() {
+            try {
+                const response = await fetch('/api/drivers');
+                if (!response.ok) throw new Error('Failed to load drivers');
+                
+                allDrivers = await response.json();
+                await displayDrivers();
+                updateSummary();
+            } catch (error) {
+                console.error('Error loading drivers:', error);
+                showAlert('فشل تحميل السائقين', 'error');
+            }
+        }
+
+        async function displayDrivers() {
+            const container = document.getElementById('driversContainer');
+            
+            if (allDrivers.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: #666;">لا توجد سائقين</p>';
+                return;
+            }
+
+            // الحصول على كشف حساب جميع السائقين
+            const accountsResponse = await fetch('/api/drivers/accounts/all');
+            const accounts = accountsResponse.ok ? await accountsResponse.json() : [];
+            const accountsMap = {};
+            accounts.forEach(acc => {
+                accountsMap[acc.driver_id] = acc;
+            });
+
+            container.innerHTML = allDrivers.map(driver => {
+                const account = accountsMap[driver.id] || {};
+                const balance = account.balance || 0;
+                const balanceClass = balance > 0 ? 'balance-credit' : (balance < 0 ? 'balance-debit' : 'balance-neutral');
+                const balanceText = balance > 0 ? `دائن ${Math.abs(balance).toFixed(2)}` : (balance < 0 ? `مدين ${Math.abs(balance).toFixed(2)}` : 'متوازن');
+                
+                return `
+                    <div class="driver-card">
+                        <div class="driver-info">
+                            <span class="driver-name">${driver.name}</span>
+                            <span class="driver-phone">${driver.phone_number}</span>
+                        </div>
+                        <div class="driver-salary">${driver.salary.toFixed(2)} ر.س</div>
+                        <div class="driver-truck">${driver.truck_id ? 'قاطرة #' + driver.truck_id : '-'}</div>
+                        <div class="driver-status">
+                            <span class="status-${driver.status}">${driver.status === 'active' ? 'نشط' : 'غير نشط'}</span>
+                        </div>
+                        <div class="driver-balance ${balanceClass}">
+                            ${balanceText} ر.س
+                        </div>
+                        <div class="driver-actions">
+                            <button class="btn-small btn-edit" onclick="editDriver(${driver.id})">تعديل</button>
+                            <button class="btn-small btn-account" onclick="viewAccount(${driver.id})">الحساب</button>
+                            <button class="btn-small btn-delete" onclick="deleteDriver(${driver.id})">حذف</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadTrucks() {
+            try {
+                const response = await fetch('/api/trucks');
+                if (!response.ok) throw new Error('Failed to load trucks');
+                
+                const trucks = await response.json();
+                const select = document.getElementById('driverTruck');
+                
+                trucks.forEach(truck => {
+                    const option = document.createElement('option');
+                    option.value = truck.id;
+                    option.textContent = `${truck.truck_type} - ${truck.plate_number}`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error loading trucks:', error);
+            }
+        }
+
+        async function updateSummary() {
+            try {
+                const response = await fetch('/api/drivers/accounts/summary');
+                const summary = await response.json();
+                
+                document.getElementById('totalDrivers').textContent = summary.total_drivers;
+                document.getElementById('activeDrivers').textContent = summary.active_drivers;
+                document.getElementById('totalSalaries').textContent = summary.drivers.reduce((sum, d) => sum + d.salary, 0).toFixed(2) + ' ر.س';
+                document.getElementById('totalBalance').textContent = summary.total_balance.toFixed(2) + ' ر.س';
+            } catch (error) {
+                console.error('Error updating summary:', error);
+            }
+        }
+
+        function openAddDriverModal() {
+            editingDriverId = null;
+            document.getElementById('modalTitle').textContent = 'إضافة سائق جديد';
+            document.getElementById('driverForm').reset();
+            document.getElementById('driverModal').classList.add('show');
+        }
+
+        function closeDriverModal() {
+            document.getElementById('driverModal').classList.remove('show');
+            editingDriverId = null;
+        }
+
+        async function editDriver(driverId) {
+            const driver = allDrivers.find(d => d.id === driverId);
+            if (!driver) return;
+
+            editingDriverId = driverId;
+            document.getElementById('modalTitle').textContent = 'تعديل بيانات السائق';
+            document.getElementById('driverName').value = driver.name;
+            document.getElementById('driverPhone').value = driver.phone_number;
+            document.getElementById('driverSalary').value = driver.salary;
+            document.getElementById('driverTruck').value = driver.truck_id || '';
+            document.getElementById('driverStatus').value = driver.status;
+
+            document.getElementById('driverModal').classList.add('show');
+        }
+
+        async function viewAccount(driverId) {
+            try {
+                const response = await fetch(`/api/drivers/${driverId}/account-details`);
+                if (!response.ok) throw new Error('Failed to load account');
+                
+                const details = await response.json();
+                const account = details.account;
+                
+                let html = `
+                    <div class="account-balance">
+                        <div class="account-balance-label">الرصيد النهائي</div>
+                        <div class="account-balance-value" style="color: ${account.balance > 0 ? '#16a34a' : (account.balance < 0 ? '#dc2626' : '#666')}">
+                            ${Math.abs(account.balance).toFixed(2)} ر.س
+                        </div>
+                        <div class="account-balance-status">
+                            ${account.account_status === 'دائن' ? '✓ الشركة مدينة للسائق' : (account.account_status === 'مدين' ? '✗ السائق مدين للشركة' : '= الحساب متوازن')}
+                        </div>
+                    </div>
+
+                    <div class="account-detail">
+                        <div class="account-detail-row">
+                            <span class="account-detail-label">اسم السائق:</span>
+                            <span class="account-detail-value">${account.driver_name}</span>
+                        </div>
+                        <div class="account-detail-row">
+                            <span class="account-detail-label">رقم الجوال:</span>
+                            <span class="account-detail-value">${account.phone_number}</span>
+                        </div>
+                        <div class="account-detail-row">
+                            <span class="account-detail-label">الراتب الشهري:</span>
+                            <span class="account-detail-value">${account.salary.toFixed(2)} ر.س</span>
+                        </div>
+                        <div class="account-detail-row">
+                            <span class="account-detail-label">عدد الشحنات:</span>
+                            <span class="account-detail-value">${account.shipment_count}</span>
+                        </div>
+                    </div>
+
+                    <div class="account-detail">
+                        <div class="account-detail-row">
+                            <span class="account-detail-label">إجمالي الإيرادات:</span>
+                            <span class="account-detail-value" style="color: #059669;">${account.total_revenue.toFixed(2)} ر.س</span>
+                        </div>
+                        <div class="account-detail-row">
+                            <span class="account-detail-label">مصاريف السائق:</span>
+                            <span class="account-detail-value" style="color: #dc2626;">${account.driver_expenses.toFixed(2)} ر.س</span>
+                        </div>
+                        <div class="account-detail-row">
+                            <span class="account-detail-label">مصاريف القاطرة:</span>
+                            <span class="account-detail-value" style="color: #dc2626;">${account.truck_expenses.toFixed(2)} ر.س</span>
+                        </div>
+                        <div class="account-detail-row">
+                            <span class="account-detail-label">إجمالي المصاريف:</span>
+                            <span class="account-detail-value" style="color: #dc2626;">${account.total_expenses.toFixed(2)} ر.س</span>
+                        </div>
+                    </div>
+                `;
+
+                if (details.shipments && details.shipments.length > 0) {
+                    html += '<div class="shipments-list"><h4>الشحنات</h4>';
+                    details.shipments.forEach(shipment => {
+                        html += `
+                            <div class="shipment-item">
+                                <strong>${shipment.from} → ${shipment.to}</strong><br>
+                                الحمولة: ${shipment.cargo}<br>
+                                الإيراد: ${shipment.revenue.toFixed(2)} ر.س | الحالة: ${shipment.status}
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                if (details.expenses && details.expenses.length > 0) {
+                    html += '<div class="expenses-list"><h4>المصاريف</h4>';
+                    details.expenses.forEach(expense => {
+                        html += `
+                            <div class="expense-item">
+                                <strong>${expense.type}</strong><br>
+                                المبلغ: ${expense.amount.toFixed(2)} ر.س<br>
+                                ${expense.description ? 'الملاحظات: ' + expense.description : ''}
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                }
+
+                document.getElementById('accountContent').innerHTML = html;
+                document.getElementById('accountModal').classList.add('show');
+            } catch (error) {
+                console.error('Error loading account:', error);
+                showAlert('فشل تحميل كشف الحساب', 'error');
+            }
+        }
+
+        function closeAccountModal() {
+            document.getElementById('accountModal').classList.remove('show');
+        }
+
+        document.getElementById('driverForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                name: document.getElementById('driverName').value,
+                phone_number: document.getElementById('driverPhone').value,
+                salary: parseFloat(document.getElementById('driverSalary').value),
+                truck_id: document.getElementById('driverTruck').value ? parseInt(document.getElementById('driverTruck').value) : null,
+                status: document.getElementById('driverStatus').value
+            };
+
+            try {
+                if (editingDriverId) {
+                    // تحديث سائق موجود
+                    const response = await fetch(`/api/drivers/${editingDriverId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (!response.ok) throw new Error('Failed to update driver');
+                    showAlert('تم تحديث بيانات السائق بنجاح', 'success');
+                } else {
+                    // إضافة سائق جديد
+                    const response = await fetch('/api/drivers', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    if (!response.ok) throw new Error('Failed to create driver');
+                    showAlert('تم إضافة السائق بنجاح', 'success');
+                }
+
+                closeDriverModal();
+                await loadDrivers();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('حدث خطأ أثناء حفظ بيانات السائق', 'error');
+            }
+        });
+
+        async function deleteDriver(driverId) {
+            if (!confirm('هل أنت متأكد من حذف هذا السائق؟')) return;
+
+            try {
+                const response = await fetch(`/api/drivers/${driverId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) throw new Error('Failed to delete driver');
+                
+                showAlert('تم حذف السائق بنجاح', 'success');
+                await loadDrivers();
+            } catch (error) {
+                console.error('Error:', error);
+                showAlert('فشل حذف السائق', 'error');
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/auth/logout', { method: 'POST' });
+                window.location.href = '/login';
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            const container = document.querySelector('.container');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

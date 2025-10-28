@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم - نظام إدارة القواطر</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body data-page="dashboard">
+    <nav class="navbar">
+        <h1>🚚 نظام إدارة القواطر المتكامل</h1>
+        <div>
+            <a href="/">الرئيسية</a>
+            <a href="/dashboard">لوحة التحكم</a>
+            <a href="/trucks">القواطر</a>
+            <a href="/drivers">السائقين</a>
+            <a href="/shipments">الشحنات</a>
+            <a href="/expenses">المصاريف</a>
+            <a href="/reports">التقارير</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <h2>لوحة التحكم</h2>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <h3>إجمالي القواطر</h3>
+                <div class="value" id="totalTrucks">-</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>القواطر النشطة</h3>
+                <div class="value" id="activeTrucks">-</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>إجمالي السائقين</h3>
+                <div class="value" id="totalDrivers">-</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>إجمالي الشحنات</h3>
+                <div class="value" id="totalShipments">-</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>الإيرادات (آخر 30 يوم)</h3>
+                <div class="value" id="totalRevenue">-</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>المصاريف (آخر 30 يوم)</h3>
+                <div class="value" id="totalExpenses">-</div>
+            </div>
+
+            <div class="stat-card">
+                <h3>الربح الإجمالي</h3>
+                <div class="value" id="totalProfit">-</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
