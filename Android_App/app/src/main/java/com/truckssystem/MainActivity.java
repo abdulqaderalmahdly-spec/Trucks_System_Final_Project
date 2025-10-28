@@ -12,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
-    private static final String APP_URL = "https://trucks-system.onrender.com/login"; // غير هذا الرابط إلى رابط تطبيقك الدائم
+    private static final String APP_URL = "https://trucks-system-mahdly.onrender.com"; // غير هذا الرابط إلى رابط تطبيقك الدائم
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
